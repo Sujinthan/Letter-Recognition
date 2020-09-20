@@ -3,7 +3,6 @@ A Convolutional Neural Network class that recognizes handwritten letters.
 """
 
 import numpy as np
-
 import keras
 from keras import backend as K
 from keras.models import Sequential, load_model
@@ -38,10 +37,13 @@ from scipy.io import loadmat
 from keras.utils import np_utils
 import idx2numpy
 
-tf.config.optimizer.set_jit(True)
 
+#Enable XLA
+tf.config.optimizer.set_jit(True)
+#Return a list of GPU devices
 gpus = tf.config.experimental.list_physical_devices('GPU')
 try:
+    #set Tensorflow to not allocate all memory on the selected GPU device
     tf.config.experimental.set_memory_growth(gpus[0], True)
 except:
     # Invalid device or cannot modify virtual devices once initialized.
@@ -49,60 +51,19 @@ except:
 
 
 class CNN():
+    
     def __init__(self):
-        self.train_path = "/mnt/e/Images for CNN/train"
-        self.test_path = "/mnt/e/Images for CNN/test"
-
-    def set_training_data(self):
-        img_size = 50
-        test_data = []
-        test_X = []
-        test_Y = []
-        for category in self.lables:
-            path = os.path.join(self.test_path, category)
-
-            for img in os.listdir(path):
-
-                try:
-                    img_array = cv2.imread(os.path.join(
-                        path, img), cv2.IMREAD_GRAYSCALE)
-                    new_array = cv2.resize(img_array, (img_size, img_size))
-                    test_data.append([new_array, class_num])
-                except Exception as e:
-                    pass
-        random.shuffle(test_data)
-        for features, label in test_data:
-            test_X.append(features)
-            test_Y.append(label)
-        test_X = np.array(test_X).reshape(-1, img_size, img_size, 1)
-        np.save("testX.npy", test_X)
-        np.save("testY.npy", test_Y)
-
-    def reset(self):
-        sess = K.get_session()
-        k.clear_session()
-        sess.close()
-        sess = get_session()
-        try:
-            del model
-        except:
-            pass
-        print(gc.collect())
-        tf.config.optimizer.set_jit(True)
-
-        gpus = tf.config.experimental.list_physical_devices('GPU')
-        try:
-            tf.config.experimental.set_memory_growth(gpus[0], True)
-        except:
-            # Invalid device or cannot modify virtual devices once initialized.
-            pass
+        self.train_path = "'Images for CNN/imageTest/Output/balanced/train'"
+        self.test_path = "Images for CNN/imageTest/Output/balanced/test"
 
     def train(self):
         batch = 64
+        #create more images using data agumentation 
         train_datagen = ImageDataGenerator(
             rotation_range=10, zoom_range=0.10, width_shift_range=0.10, rescale=1./255, height_shift_range=0.10)
         test_datagen = ImageDataGenerator(rescale=1./255)
 
+        #build CNN
         model = Sequential()
         model.add(Conv2D(32, (5, 5), input_shape=(28, 28, 1),
                          activation="relu", strides=2, padding='same'))
@@ -123,74 +84,92 @@ class CNN():
 
         model.add(Dense(37, activation='softmax'))
 
-        model.summary() 
+        model.summary()
+        #set learning rate 
         lrate = 0.01
-        adam = keras.optimizers.SGD(lr=lrate)
+        opt = keras.optimizers.SGD(lr=lrate)
         epochs = 100
+        #reduce learning rate when val_loss stops improving
         annealer = ReduceLROnPlateau(
             monitor='val_loss', mode='min',  factor=0.95, patience=3, verbose=1)
+        #compile with SGD optimizer and cross entropy cost 
         model.compile(loss="categorical_crossentropy",
-                      optimizer=adam, metrics=['accuracy'])
+                      optimizer=opt, metrics=['accuracy'])
+        #log each epoch to file
         csv_logger = CSVLogger('training.log')
+        #stop training when val_loss stops improving
         es = EarlyStopping(monitor='val_loss', mode='min', patience=50)
+        #save model on lowest val_loss
         mc = ModelCheckpoint('model.h5', monitor='val_loss',
                              mode='min', save_best_only=True)
-
-        model.fit(train_datagen.flow_from_directory('Images for CNN/imageTest/Output/balanced/train', target_size=(28, 28), batch_size=batch, color_mode='grayscale', class_mode='categorical', shuffle=True), epochs=epochs,
-                  validation_data=test_datagen.flow_from_directory('Images for CNN/imageTest/Output/balanced/test', target_size=(28, 28), batch_size=batch, color_mode='grayscale', class_mode='categorical', shuffle=False), callbacks=[es, mc, annealer, csv_logger])
+        #train the model
+        model.fit(train_datagen.flow_from_directory(self.train_path, target_size=(28, 28), batch_size=batch, color_mode='grayscale', class_mode='categorical', shuffle=True), epochs=epochs,
+                  validation_data=test_datagen.flow_from_directory(self.test_path, target_size=(28, 28), batch_size=batch, color_mode='grayscale', class_mode='categorical', shuffle=False), callbacks=[es, mc, annealer, csv_logger])
         for i in range(1, 5):
+            #reduce the learning rate by 10
             if (i % 2 == 0):
                 lrate = lrate / 10
-
+            #clear clutter of old models and layers to for memory
             K.clear_session()
-
             del model
+            
             tf.config.optimizer.set_jit(True)
-
             gpus = tf.config.experimental.list_physical_devices('GPU')
             try:
                 tf.config.experimental.set_memory_growth(gpus[0], True)
             except:
                 # Invalid device or cannot modify virtual devices once initialized.
                 pass
-
+            
+            #load model to train
             model = load_model('model.h5')
-
-            adam = keras.optimizers.SGD(lr=lrate, momentum=0.95, nesterov=True)
             model.compile(loss="categorical_crossentropy",
-                          optimizer=adam, metrics=['accuracy'])
-
-            model.fit(train_datagen.flow_from_directory('Images for CNN/imageTest/Output/balanced/train', target_size=(28, 28), batch_size=batch, color_mode='grayscale', class_mode='categorical', shuffle=True), epochs=epochs, validation_data=test_datagen.flow_from_directory('Images for CNN/imageTest/Output/balanced/test', target_size=(28, 28), batch_size=batch, color_mode='grayscale', class_mode='categorical', shuffle=False),
+                          optimizer=opt, metrics=['accuracy'])
+            model.fit(train_datagen.flow_from_directory(self.train_path, target_size=(28, 28), batch_size=batch, color_mode='grayscale', class_mode='categorical', shuffle=True), epochs=epochs, validation_data=test_datagen.flow_from_directory(self.test_path, target_size=(28, 28), batch_size=batch, color_mode='grayscale', class_mode='categorical', shuffle=False),
                       callbacks=[es, mc, annealer,  csv_logger])
-
+        #save final model
         model.save("model_test.h5")
 
     def test(self):
-        from keras.preprocessing import image
+        '''
+        Test the model using images from differect directory, print results.
+        '''
+        #load model
         model = load_model('model.h5', compile=True)
         test_datagen = ImageDataGenerator(rescale=1./255)
-
+        #load images that is different from validation and train images
         train_generator = test_datagen.flow_from_directory('Images for CNN/imageTest/Output/balanced/training', target_size=(28, 28), batch_size=32,
                                                            color_mode='grayscale', class_mode='categorical', shuffle=False)
-
         test_loss, test_acc = model.evaluate_generator(
             train_generator, verbose=1)
+        #print test_loss and test_acc
         print('\nTest Loss: ', test_loss)
         print('\nTest accuracy: ', test_acc)
 
-    def predict(self):
-        IMG_SIZE = 28  # 50 in txt-based
-        img_array = Image.open('test-J.jpg').convert("L")
-        new_array = np.reshape(img_array, (28, 28, 1))
+    def predict(self, path):
+
+        '''
+        Predict image from given path.  
+        '''
+        #set image size
+        IMG_SIZE = 28 
+        #Open image and convert to grayscale
+        img_array = Image.open(path).convert("L")
+        #resize image to be 28x28
+        new_array = np.reshape(img_array, (IMG_SIZE, IMG_SIZE, 1))
         im2arr = np.array(new_array)
-        im2arr = im2arr.reshape(-1, 28, 28, 1)
+        im2arr = im2arr.reshape(-1, IMG_SIZE, IMG_SIZE, 1)
+        #load model
         model = load_model('model.h5')
         test_datagen = ImageDataGenerator(rescale=1./255)
         train_generator = test_datagen.flow_from_directory('Images for CNN/imageTest/Output/balanced/training', target_size=(28, 28), batch_size=32,
                                                            color_mode='grayscale', class_mode='categorical', shuffle=False)
+        #get class names 
         y_Labels = train_generator.class_indices
+        #switch key, value for faster way to get image category
         y_Labels = {y: x for x, y in y_Labels.items()}
         print(type(y_Labels))
+        #make prediction
         prediction = model.predict_classes([im2arr])
         print(type(prediction))
         return y_Labels[prediction[0]]
@@ -203,6 +182,6 @@ if __name__ == "__main__":
     # temp.guess()
 
     print("This is prediction")
-    print(temp.prepare())
+    print(temp.predict())
     print("------")
     print("Done!!!")
