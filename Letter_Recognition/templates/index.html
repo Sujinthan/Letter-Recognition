@@ -1,33 +1,167 @@
 {% extends "layout.html" %}
 
 {% block content %}
+<script>
 
-<div class="jumbotron">
-    <h1>Flask</h1>
-    <p class="lead">Flask is a free web framework for building great Web sites and Web applications using HTML, CSS and JavaScript.</p>
-    <p><a href="http://flask.pocoo.org/" class="btn btn-primary btn-large">Learn more &raquo;</a></p>
+    function findxy(res, e) {
+        if (res == 'down') {
+            prevX = currX;
+            prevY = currY;
+            currX = e.clientX - canvas.offsetLeft;
+            currY = e.clientY - canvas.offsetTop;
+
+            flag = true;
+            dot_flag = true;
+            if (dot_flag) {
+                ctx.beginPath();
+                ctx.fillStyle = x;
+                ctx.fillRect(currX, currY, 0, 0);
+                ctx.closePath();
+                dot_flag = false;
+            }
+        }
+        if (res == 'up' || res == "out") {
+            flag = false;
+        }
+        if (res == 'move') {
+            if (flag) {
+                prevX = currX;
+                prevY = currY;
+                currX = e.clientX - canvas.offsetLeft;
+                currY = e.clientY - canvas.offsetTop;
+                draw();
+            }
+        }
+    }
+    var canvas, ctx, flag = false,
+        prevX = 0,
+        currX = 0,
+        prevY = 0,
+        currY = 0,
+        dot_flag = false;
+
+    var x = "black",
+        y = 2;
+
+    function init() {
+        canvas = document.getElementById('can');
+        ctx = canvas.getContext("2d");
+        w = canvas.width;
+        h = canvas.height;
+        ctx.fillStyle = "white";
+        ctx.fillRect(0, 0, w, h);
+
+
+        canvas.addEventListener("mousemove", function (e) {
+            findxy('move', e)
+        }, false);
+        canvas.addEventListener("mousedown", function (e) {
+            findxy('down', e)
+        }, false);
+        canvas.addEventListener("mouseup", function (e) {
+            findxy('up', e)
+        }, false);
+        canvas.addEventListener("mouseout", function (e) {
+            findxy('out', e)
+        }, false);
+    }
+
+    //function color(obj) {
+    //    switch (obj.id) {
+    //        case "green":
+    //            x = "green";
+    //            break;
+    //        case "blue":
+    //            x = "blue";
+    //            break;
+    //        case "red":
+    //            x = "red";
+    //            break;
+    //        case "yellow":
+    //            x = "yellow";
+    //            break;
+    //        case "orange":
+    //            x = "orange";
+    //            break;
+    //        case "black":
+    //            x = "black";
+    //            break;
+    //        case "white":
+    //            x = "white";
+    //            break;
+    //    }
+    //    if (x == "white") y = 14;
+    //    else y = 2;
+
+    //}
+
+    function draw() {
+        canvas = document.getElementById('can');
+        ctx = canvas.getContext("2d");
+        ctx.beginPath();
+        ctx.lineCap = 'round';
+        ctx.moveTo(prevX, prevY);
+        ctx.lineTo(currX, currY);
+        ctx.strokeStyle = x;
+        ctx.lineWidth = 5;
+
+        ctx.stroke();
+        ctx.closePath();
+    }
+
+    function erase() {
+
+
+        ctx.clearRect(0, 0, w, h);
+        document.getElementById("canvasimg").style.display = "none";
+
+    }
+
+</script>
+<style>
+    #can:hover {
+        cursor: url("../static/brush.png"), auto;
+    }
+</style>
+<div class="cursor" id="cursor"></div>
+<div class="container">
+
+    <h1 class="display">Letter Recognition</h1>
+    <p class="lead">Use your mouse to write a letter from A-Z or a-z</p>
 </div>
 
 <div class="row">
-    <div class="col-md-4">
-        <h2>Getting started</h2>
-        <p>
-            Flask gives you a powerful, patterns-based way to build dynamic websites that
-            enables a clean separation of concerns and gives you full control over markup
-            for enjoyable, agile development.
-        </p>
-        <p><a class="btn btn-default" href="http://flask.pocoo.org/docs/">Learn more &raquo;</a></p>
-    </div>
-    <div class="col-md-4">
-        <h2>Get more libraries</h2>
-        <p>The Python Package Index is a repository of software for the Python programming language.</p>
-        <p><a class="btn btn-default" href="https://pypi.python.org/pypi">Learn more &raquo;</a></p>
-    </div>
-    <div class="col-md-4">
-        <h2>Microsoft Azure</h2>
-        <p>You can easily publish to Microsoft Azure using Visual Studio. Find out how you can host your application using a free trial today.</p>
-        <p><a class="btn btn-default" href="http://azure.microsoft.com">Learn more &raquo;</a></p>
-    </div>
+    <div class="row"></div>
+    <canvas id="can" width="128" height="128" style="
+        position: relative;
+        top: 10%;
+        left: 10%;
+        border: 2px solid;" onmouseup="sendData()">
+    </canvas>
+
+    <img id="canvasimg" style="position:absolute;top:10%;left:52%;" style="display:none;">
+    <p id="result"></p>
+    <input type="button" value="clear" id="clr" size="23" onclick="init()" style="position:relative;top:55%;left:15%;">
 </div>
+<script>
+    document.addEventListener('DOMContentLoaded', init());
+    function sendData() {
+        var scratchCanvas = document.getElementById('can');
+        var context = scratchCanvas.getContext('2d');
+        var dataURL = scratchCanvas.toDataURL("image/png");
+        $.ajax({
+            type: "POST",
+            url: "/imgToText",
+            data: {
+                imageBase64: dataURL
+            }
+        }).done(function (data) {
+            document.getElementById("result").innerHTML = "This is letter: " + data
+        });
+    }
+</script>
+
+
+
 
 {% endblock %}
