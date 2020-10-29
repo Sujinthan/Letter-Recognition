@@ -2,47 +2,6 @@
 
 {% block content %}
 <script>
-
-    function findxy(res, e) {
-        if (res == 'down') {
-            prevX = currX;
-            prevY = currY;
-            currX = e.clientX - canvas.offsetLeft;
-            currY = e.clientY - canvas.offsetTop;
-
-            flag = true;
-            dot_flag = true;
-            if (dot_flag) {
-                ctx.beginPath();
-                ctx.fillStyle = x;
-                ctx.fillRect(currX, currY, 0, 0);
-                ctx.closePath();
-                dot_flag = false;
-            }
-        }
-        if (res == 'up' || res == "out") {
-            flag = false;
-        }
-        if (res == 'move') {
-            if (flag) {
-                prevX = currX;
-                prevY = currY;
-                currX = e.clientX - canvas.offsetLeft;
-                currY = e.clientY - canvas.offsetTop;
-                draw();
-            }
-        }
-    }
-    var canvas, ctx, flag = false,
-        prevX = 0,
-        currX = 0,
-        prevY = 0,
-        currY = 0,
-        dot_flag = false;
-
-    var x = "black",
-        y = 2;
-
     function init() {
         canvas = document.getElementById('can');
         ctx = canvas.getContext("2d");
@@ -50,34 +9,41 @@
         h = canvas.height;
         ctx.fillStyle = "white";
         ctx.fillRect(0, 0, w, h);
-        canvas.addEventListener("mousemove", function (e) {
-            findxy('move', e)
-        }, false);
-        canvas.addEventListener("mousedown", function (e) {
-            findxy('down', e)
-        }, false);
-        canvas.addEventListener("mouseup", function (e) {
-            findxy('up', e)
-        }, false);
-        canvas.addEventListener("mouseout", function (e) {
-            findxy('out', e)
-        }, false);
+        $('#can').mousedown(function (e) {
+            mousePressed = true;
+            Draw(e.pageX - $(this).offset().left, e.pageY - $(this).offset().top, false);
+        });
+
+        $('#can').mousemove(function (e) {
+            if (mousePressed) {
+                Draw(e.pageX - $(this).offset().left, e.pageY - $(this).offset().top, true);
+            }
+        });
+
+        $('#can').mouseup(function (e) {
+            mousePressed = false;
+        });
+        $('#can').mouseleave(function (e) {
+            mousePressed = false;
+        });
     }
 
-    function draw() {
-        canvas = document.getElementById('can');
-        ctx = canvas.getContext("2d");
-        ctx.beginPath();
-        ctx.lineCap = 'round';
-        ctx.moveTo(prevX, prevY);
-        ctx.lineTo(currX, currY);
-        ctx.strokeStyle = x;
-        ctx.lineWidth = 5;
+    function Draw(x, y, isDown) {
+        if (isDown) {
+            canvas = document.getElementById('can');
+            ctx = canvas.getContext("2d");
+            ctx.beginPath();
 
-        ctx.stroke();
-        ctx.closePath();
+            ctx.lineCap = "round";
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(x, y);
+            ctx.strokeStyle = "black";
+            ctx.lineWidth = 5;
+            ctx.stroke();
+            ctx.closePath();
+        }
+        lastX = x; lastY = y;
     }
-
     function erase() {
 
 
@@ -95,30 +61,54 @@
 <div class="cursor" id="cursor"></div>
 <div class="container">
 
-    <h1 class="display">Letter Recognition</h1>
-    <p class="lead">Use your mouse to write a letter from A-Z or a-z</p>
+    <h1 class="display mainHeader">Letter Recognition</h1>
+    <p class="lead subHeader">Use your mouse to write a letter from A-Z or a-z</p>
 </div>
 
-<div class="row">
-    <div class="row"></div>
-    <canvas id="can" width="128" height="128" style="
-        position: relative;
-        top: 10%;
-        left: 10%;
+<div class="row mainRow">
+    <div class="row canvusHolder">
+        <canvas id="can" width="200" height="200" style="
         border: 2px solid;" onmouseup="sendData()">
-    </canvas>
+        </canvas>
+    </div>
+    <img id="canvasimg" style="position:absolute;top:10%;left:52%; display:none;">
+    <div class="col resultButton">
+        <div id="loadingImage" style="    position: relative;
+    width:111px;
+    height:14px;
+    background: rgba( 255, 255, 255, .8 ) url('../static/loading.gif') 50% 50% no-repeat;"></div>
+        <p id="result" style="display:none;"></p>
 
-    <img id="canvasimg" style="position:absolute;top:10%;left:52%;" style="display:none;">
-    <p id="result"></p>
-    <input type="button" value="clear" id="clr" size="23" onclick="init()" style="position:relative;top:55%;left:15%;">
+    </div>
+    <br />
+    <br />
+    <div class="row clearbutton">
+        <div class="col buttonDiv" >
+            <button type="button" style="        position: relative;
+        bottom: 0;
+        left: 50%;
+        transform: translate(-50%, 0%);
+" class="btn btn-dark"  onclick="init()">Clear</button>
+            <!--<input class="btn btn-outline-dark" type="button" value="clear" id="clr" size="23" onclick="init()" style="position:relative;bottom:0;left:15%;">-->
+        </div>
+
+    </div>
+
 </div>
 <script>
-    document.addEventListener('DOMContentLoaded', init());
+    document.addEventListener('DOMContentLoaded', function () {
+
+        $('#loadingImage').hide();
+        init()
+    });
 
     function sendData() {
+        $('#result').hide();
+        $('#loadingImage').show()
         var scratchCanvas = document.getElementById('can');
         var context = scratchCanvas.getContext('2d');
         var dataURL = scratchCanvas.toDataURL("image/png");
+
         $.ajax({
             type: "POST",
             url: "/imgToText",
@@ -127,6 +117,8 @@
             }
         }).done(function (data) {
             document.getElementById("result").innerHTML = "This is letter: " + data
+            $('#loadingImage').hide();
+            $('#result').show();
         });
     }
 </script>
