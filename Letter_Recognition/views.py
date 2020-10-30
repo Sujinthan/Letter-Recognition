@@ -50,7 +50,7 @@ def prepare_image(image, target):
     '''
     Preprocess the image and prepare it for classification
     '''
-    img_array = Image.open(BytesIO(image)).convert("L")
+    img_array = Image.open(BytesIO(image)).convert('L')
     img_array = ImageOps.invert(img_array)
 
     new_array = img_array.resize((target,target))

@@ -7,7 +7,9 @@ Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Letter-Recognition", "Lette
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{BB306780-1363-4262-AB4F-7B57AD11D67B}"
 	ProjectSection(SolutionItems) = preProject
+		brush.png = brush.png
 		CNN.py = CNN.py
+		Letter_Recognition\static\loading.gif = Letter_Recognition\static\loading.gif
 		mnist_jpg.py = mnist_jpg.py
 		model.h5 = model.h5
 		setup.py = setup.py

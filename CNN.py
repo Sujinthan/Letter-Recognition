@@ -138,7 +138,7 @@ class CNN():
         model = load_model('model.h5', compile=True)
         test_datagen = ImageDataGenerator(rescale=1./255)
         #load images that is different from validation and train images
-        train_generator = test_datagen.flow_from_directory('Images for CNN/imageTest/Output/balanced/training', target_size=(28, 28), batch_size=32,
+        train_generator = test_datagen.flow_from_directory('Images for CNN/imageTest/Output/balanced/test', target_size=(28, 28), batch_size=32,
                                                            color_mode='grayscale', class_mode='categorical', shuffle=False)
         test_loss, test_acc = model.evaluate_generator(
             train_generator, verbose=1)
@@ -147,7 +147,6 @@ class CNN():
         print('\nTest accuracy: ', test_acc)
 
     def predict(self, path):
-
         '''
         Predict image from given path.  
         '''
@@ -175,13 +174,13 @@ class CNN():
         return y_Labels[prediction[0]]
 
 
-if __name__ == "__main__":
+#if __name__ == "__main__":
 
-    temp = CNN()
-    # temp.train()
-    # temp.guess()
+#    temp = CNN()
+#    # temp.train()
+#    # temp.guess()
 
-    print("This is prediction")
-    print(temp.predict())
-    print("------")
-    print("Done!!!")
+#    print("This is prediction")
+#    print(temp.predict())
+#    print("------")
+#    print("Done!!!")

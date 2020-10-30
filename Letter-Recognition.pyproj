@@ -17,7 +17,8 @@
     <SuppressCollectPythonCloudServiceFiles>true</SuppressCollectPythonCloudServiceFiles>
     <Name>Letter-Recognition</Name>
     <RootNamespace>Letter-Recognition</RootNamespace>
-    <InterpreterId>MSBuild|env|$(MSBuildProjectFullPath)</InterpreterId>
+    <InterpreterId>MSBuild|env1|$(MSBuildProjectFullPath)</InterpreterId>
+    <IsWindowsApplication>True</IsWindowsApplication>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -41,6 +42,8 @@
     <Folder Include="Letter_Recognition\templates\" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Letter_Recognition\static\content\crusor.css" />
+    <Content Include="libman.json" />
     <Content Include="requirements.txt" />
     <Content Include="Letter_Recognition\static\content\bootstrap.css" />
     <Content Include="Letter_Recognition\static\content\bootstrap.min.css" />
@@ -70,6 +73,15 @@
     <Content Include="Letter_Recognition\templates\layout.html" />
   </ItemGroup>
   <ItemGroup>
+    <Interpreter Include="env1\">
+      <Id>env1</Id>
+      <Version>3.7</Version>
+      <Description>env1 (Python 3.7 (64-bit))</Description>
+      <InterpreterPath>Scripts\python.exe</InterpreterPath>
+      <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
+      <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
+      <Architecture>X64</Architecture>
+    </Interpreter>
     <Interpreter Include="env\">
       <Id>env</Id>
       <Version>3.7</Version>
